@@ -1,13 +1,26 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import torch
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from generate import load_vae, load_gnn
 from utils.optimization import optimize_latent_space
 
 
-
 app = FastAPI()
+
+# Allow frontend access from localhost and Vercel
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://your-frontend.vercel.app",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 device = torch.device("cpu")
 
