@@ -10,9 +10,11 @@ This module:
 """
 # Add this import at the top of utils/optimization.py
 import base64
-
+import requests
 from utils.chemistry import draw_molecule
 import torch
+
+SESSION = requests.Session()
 
 from utils.chemistry import (
     is_valid_smiles,
@@ -190,7 +192,7 @@ KNOWN_MOLECULES = {
     },
 }
 
-
+MOLECULE_NAME_CACHE = {}
 def molecule_name(smiles):
     """
     Get real chemical names from PubChem.
@@ -216,14 +218,21 @@ def molecule_name(smiles):
     # -----------------------------
     # Validate molecule
     # -----------------------------
+    
+    if smiles in MOLECULE_NAME_CACHE:
+          return MOLECULE_NAME_CACHE[smiles]
+
+    # Default empty result
+    empty_result = {
+        "name": None,
+        "systematic_name": None,
+        "iupac_name": None,
+        "common_name": None,
+        "formula": None,
+    }
     if not smiles:
-        return {
-            "name": None,
-            "systematic_name": None,
-            "iupac_name": None,
-            "common_name": None,
-            "formula": None,
-        }
+        MOLECULE_NAME_CACHE[smiles] = empty_result
+        return empty_result
 
     mol = Chem.MolFromSmiles(smiles)
 
@@ -257,7 +266,7 @@ def molecule_name(smiles):
         )
 
         # Short timeout prevents hanging
-        response = requests.get(url, timeout=3)
+        response = SESSION.get(url, timeout=3)
 
         if response.status_code == 200:
             data = response.json()
@@ -317,10 +326,7 @@ def smiles_to_name(smiles):
             f"compound/smiles/{encoded_smiles}/property/IUPACName/JSON"
         )
 
-        response = requests.get(
-            url,
-            timeout=5,
-        )
+        response = SESSION.get(url, timeout=3)
 
         if response.status_code != 200:
             NAME_CACHE[smiles] = None
@@ -434,7 +440,7 @@ def optimize_latent_space(
             )
             accuracy = max(0, 1 - error)
             
-            image = mol_to_base64(smiles)
+            
 
             # Store result
             results.append({
@@ -448,13 +454,8 @@ def optimize_latent_space(
             
 
 
-    # Sort by closeness to target
-    results.sort(
-        key=lambda x: x["error"]
-    )
-
-    # Return top 10
-    top_results = results[:10]
+    import heapq
+    top_results = heapq.nsmallest(10, results, key=lambda x: x["error"])
 
     for result in top_results:
         name_info = molecule_name(result["smiles"])
