@@ -11,6 +11,6 @@ numpy==1.26.4
 pillow==10.4.0
 selfies==2.1.2
 
-rdkit-pypi==2022.9.5
+rdkit
 
 torch-geometric==2.5.3
