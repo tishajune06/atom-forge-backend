@@ -6,6 +6,5 @@ torch
 torch-geometric
 rdkit-pypi
 numpy==1.26.4
-pandas
 pillow
 selfies
