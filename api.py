@@ -16,6 +16,13 @@ import sas  # keep only if installed correctly
 # ---------------- APP SETUP ----------------
 app = FastAPI()
 
+# ---------------- ROOT ENDPOINT ----------------
+@app.get("/")
+def home():
+    return {
+        "message": "Drug Discovery API is running"
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # change to vercel URL in production
